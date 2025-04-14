@@ -42,7 +42,7 @@ function initBackgroundCanvas() {
     const particlesGeometry = new THREE.BufferGeometry();
     const particlesCount = 6000;
     
-    const posArray = new Float32Array(particlesCount * 2);
+    const posArray = new Float32Array(particlesCount * 3);
     
     for(let i = 0; i < particlesCount * 3; i++) {
         posArray[i] = (Math.random() - 0.5) * 10;
@@ -50,10 +50,18 @@ function initBackgroundCanvas() {
     
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     
-    // Materials
+    // Materials - initial color
+    let particleColor = getComputedStyle(document.documentElement).getPropertyValue('--star-color').trim();
+    // Convert CSS rgba to hex for Three.js
+    let colorHex = 0x64ffda; // Default color
+    
+    if (document.body.classList.contains('light-mode')) {
+        colorHex = 0x0a66c2; // Blue color for light mode
+    }
+    
     const particlesMaterial = new THREE.PointsMaterial({
         size: 0.005,
-        color: 0x64ffda,
+        color: colorHex,
         transparent: true,
         opacity: 0.8
     });
@@ -71,6 +79,15 @@ function initBackgroundCanvas() {
     }
     
     animate();
+    
+    // Update particle color when theme changes
+    document.addEventListener('themeChanged', () => {
+        if (document.body.classList.contains('light-mode')) {
+            particlesMaterial.color.set(0x0a66c2); // Blue for light mode
+        } else {
+            particlesMaterial.color.set(0x64ffda); // Teal for dark mode
+        }
+    });
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -115,17 +132,15 @@ function initDarkModeToggle() {
         document.body.classList.toggle('light-mode');
         const theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
         localStorage.setItem('theme', theme);
+        
+        // Dispatch custom event for theme change
+        document.dispatchEvent(new CustomEvent('themeChanged'));
     });
 }
 
 // Initialize Skill Bars
 function initSkillBars() {
     const skillBars = document.querySelectorAll('.skill-bar');
-    
-    skillBars.forEach(bar => {
-        const level = bar.getAttribute('data-level');
-        bar.style.setProperty('--level', level);
-    });
     
     // Animate skill bars on scroll
     const skillsSection = document.getElementById('skills');
@@ -134,7 +149,11 @@ function initSkillBars() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 skillBars.forEach(bar => {
-                    bar.classList.add('animate');
+                    const level = bar.getAttribute('data-level');
+                    const skillLevel = bar.querySelector('.skill-level');
+                    if (skillLevel) {
+                        skillLevel.style.width = level;
+                    }
                 });
                 observer.unobserve(entry.target);
             }
@@ -325,3 +344,91 @@ function initContactForm() {
 }
 
 // Audio Toggle (Optional)
+function initAudioToggle() {
+    const audioToggle = document.getElementById('audio-toggle');
+    if (!audioToggle) return;
+    
+    // Create audio element
+    const audio = new Audio('audio/background-music.mp3');
+    audio.loop = true;
+    audio.volume = 0.5;
+    
+    let isPlaying = false;
+    
+    // Toggle audio on click
+    audioToggle.addEventListener('click', () => {
+        if (isPlaying) {
+            audio.pause();
+            audioToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            audioToggle.classList.remove('playing');
+        } else {
+            audio.play().catch(error => {
+                console.log('Audio playback failed:', error);
+            });
+            audioToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            audioToggle.classList.add('playing');
+        }
+        
+        isPlaying = !isPlaying;
+    });
+    
+    // Audio visualizer (simple implementation)
+    if (window.AudioContext || window.webkitAudioContext) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        analyser.fftSize = 32;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        const visualizer = document.createElement('div');
+        visualizer.className = 'audio-visualizer';
+        audioToggle.appendChild(visualizer);
+        
+        function updateVisualizer() {
+            if (!isPlaying) {
+                visualizer.style.height = '0px';
+                requestAnimationFrame(updateVisualizer);
+                return;
+            }
+            
+            analyser.getByteFrequencyData(dataArray);
+            let average = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                average += dataArray[i];
+            }
+            average /= bufferLength;
+            
+            const height = Math.min(100, average * 100 / 256);
+            visualizer.style.height = height + '%';
+            
+            requestAnimationFrame(updateVisualizer);
+        }
+        
+        updateVisualizer();
+    }
+    
+    // Preload images for projects
+    function preloadImages() {
+        const projectImages = document.querySelectorAll('.project-image img');
+        projectImages.forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) {
+                const preloadImage = new Image();
+                preloadImage.src = src;
+                preloadImage.onload = () => {
+                    img.src = src;
+                    img.classList.add('loaded');
+                };
+            }
+        });
+    }
+    
+    // Call preload function
+    preloadImages();
+}
