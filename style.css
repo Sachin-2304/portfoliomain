@@ -8,6 +8,7 @@
     --border-color: #233554;
     --transition: all 0.3s ease;
     --shadow: 0 10px 30px -15px rgba(2, 12, 27, 0.7);
+    --star-color: rgba(255, 255, 255, 0.5); /* Star color for dark mode */
 }
 
 /* Dark/Light Mode Variables */
@@ -20,6 +21,7 @@ body.light-mode {
     --card-bg: #f0f0f0;
     --border-color: #ddd;
     --shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    --star-color: rgba(10, 102, 194, 0.7); /* Blue stars for light mode */
 }
 
 /* Global Styles */
@@ -351,6 +353,10 @@ body.light-mode #dark-mode-toggle::before {
 .skill-bar {
     margin-bottom: 1.5rem;
     position: relative;
+    height: 10px;
+    background-color: var(--border-color);
+    border-radius: 5px;
+    margin-top: 30px;
 }
 
 .skill-bar::before {
@@ -369,28 +375,11 @@ body.light-mode #dark-mode-toggle::before {
     color: var(--secondary-color);
 }
 
-.skill-bar {
-    height: 10px;
-    background-color: var(--border-color);
-    border-radius: 5px;
-    margin-top: 30px;
-}
-
-.skill-bar::before {
-    content: attr(data-skill);
-    position: absolute;
-    top: -25px;
-    left: 0;
-    color: var(--text-color);
-}
-
-.skill-bar::after {
-    content: '';
+.skill-level {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
-    width: attr(data-level);
     background-color: var(--secondary-color);
     border-radius: 5px;
     animation: skillFill 1.5s ease-in-out forwards;
@@ -709,7 +698,7 @@ footer {
 
 @keyframes skillFill {
     from { width: 0; }
-    to { width: var(--level); }
+    to { width: 100%; }
 }
 
 /* Responsive Styles */
